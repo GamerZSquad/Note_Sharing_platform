@@ -112,7 +112,9 @@ nav a{
     border-radius:10px;
     min-height:120px;
 }
-
+header{
+    background-color: #1e293b;
+}
 footer{
     text-align:center;
     padding:20px;
