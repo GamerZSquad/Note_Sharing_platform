@@ -1,55 +1,80 @@
-const url = "http://localhost:5000/api/auth";
+const API_URL = "http://localhost:5000/api/auth";
 
-function scrollToAuth() {
-    document.getElementById("auth").scrollIntoView();
+function goToLogin() {
+    window.location.href = "login.html";
 }
 
 async function registerUser() {
 
-    let username = document.getElementById("regUsername").value;
-    let email = document.getElementById("regEmail").value;
-    let password = document.getElementById("regPassword").value;
+    const username = document.getElementById("regUsername").value;
+    const email = document.getElementById("regEmail").value;
+    const password = document.getElementById("regPassword").value;
 
-    let res = await fetch(url + "/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            username: username,
-            email: email,
-            password: password
-        })
-    });
+    try {
 
-    let data = await res.json();
+        const response = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username,
+                email,
+                password
+            })
+        });
 
-    document.getElementById("output").innerText =
-        JSON.stringify(data, null, 2);
+        const data = await response.json();
+
+        alert(data.message);
+
+    } catch (error) {
+
+        alert("Registration failed");
+        console.error(error);
+
+    }
 }
 
+// Login User
 async function loginUser() {
 
-    let email = document.getElementById("loginEmail").value;
-    let password = document.getElementById("loginPassword").value;
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
 
-    let res = await fetch(url + "/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            email: email,
-            password: password
-        })
-    });
+    try {
 
-    let data = await res.json();
+        const response = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email,
+                password
+            })
+        });
 
-    if (data.token) {
-        localStorage.setItem("token", data.token);
+        const data = await response.json();
+
+        if (response.ok) {
+
+            alert("Login Successful!");
+
+            localStorage.setItem("token", data.token);
+
+            window.location.href = "dashboard.html";
+
+        } else {
+
+            alert(data.message);
+
+        }
+
+    } catch (error) {
+
+        alert("Login failed");
+        console.error(error);
+
     }
-
-    document.getElementById("output").innerText =
-        JSON.stringify(data, null, 2);
 }

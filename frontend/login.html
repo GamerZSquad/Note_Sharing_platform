@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note sharing Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <section id="auth" class="auth-section">
+
+        <div class="form-card">
+
+            <h2>Register</h2>
+
+            <input type="text"
+                   id="regUsername"
+                   placeholder="Username">
+
+            <input type="email"
+                   id="regEmail"
+                   placeholder="Email">
+
+            <input type="password"
+                   id="regPassword"
+                   placeholder="Password">
+
+            <button onclick="registerUser()">
+                Register
+            </button>
+
+        </div>
+
+        <div class="form-card">
+
+            <h2>Login</h2>
+
+            <input type="email"
+                   id="loginEmail"
+                   placeholder="Email">
+
+            <input type="password"
+                   id="loginPassword"
+                   placeholder="Password">
+
+            <button onclick="loginUser()">
+                Login
+            </button>
+
+        </div>
+
+    </section>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
