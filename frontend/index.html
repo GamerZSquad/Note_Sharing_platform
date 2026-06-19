@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyShare</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav>
+        <div class="logo">Note Share Plateform</div>
+        <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#auth">Login</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Share Notes. Learn Faster.</h1>
+        <p>Upload, discover and access academic notes with AI-powered Note Summerization.</p>
+        <button onclick="scrollToAuth()">Get Started</button>
+    </section>
+
+    <section id="features" class="features">
+        <h2>Features</h2>
+
+        <div class="feature-grid">
+            <div class="card">
+                <h3> Note Sharing</h3>
+                <p>Upload and share study materials with classmates and other professionalsss.</p>
+            </div>
+
+            <div class="card">
+                <h3> AI Summaries</h3>
+                <p>Generate quick summaries from uploaded notes.</p>
+            </div>
+
+            <div class="card">
+                <h3> Smart Search</h3>
+                <p>Find notes quickly using keywords or notes namesd.</p>
+            </div>
+
+            <div class="card">
+                <h3> Cloud Storage</h3>
+                <p>Store files securely and access them anywhere.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="auth" class="auth-section">
+
+        <div class="form-card">
+            <h2>Register</h2>
+
+            <input type="text" id="regUsername" placeholder="Username">
+            <input type="email" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Password">
+
+            <button onclick="registerUser()">Register</button>
+        </div>
+
+        <div class="form-card">
+            <h2>Login</h2>
+
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+
+            <button onclick="loginUser()">Login</button>
+        </div>
+
+    </section>
+
+    <!-- <section class="output-section">
+        <h2>Response</h2>
+        <pre id="output"></pre>
+    </section> -->
+
+    <script src="script.js"></script>
+
+</body>
+</html>
+
