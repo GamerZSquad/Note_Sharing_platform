@@ -1,0 +1,43 @@
+import { randomBytes } from "crypto";
+import { prisma } from "@/lib/db";
+import { forgotPasswordSchema } from "@/lib/validations";
+import { sendMail, appUrl } from "@/lib/email";
+import { jsonError, jsonOk } from "@/lib/http";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+
+export async function POST(request: Request) {
+  const limited = rateLimit(clientKey(request, "forgot"), 5, 10 * 60_000);
+  if (!limited.ok) return jsonError("Too many requests. Try again later.", 429);
+
+  const body = await request.json().catch(() => null);
+  const parsed = forgotPasswordSchema.safeParse(body);
+  if (!parsed.success) return jsonError("Enter a valid email");
+
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email.toLowerCase() },
+  });
+
+  let resetUrl: string | undefined;
+  if (user) {
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    const token = randomBytes(32).toString("hex");
+    await prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+    resetUrl = appUrl(`/reset-password?token=${token}`);
+    await sendMail({
+      to: user.email,
+      subject: "Reset your StudySphere password",
+      text: `Reset your password using this link (valid for 1 hour):\n${resetUrl}`,
+    });
+  }
+
+  return jsonOk({
+    message: "If that email exists, a reset link has been sent.",
+    resetUrl: process.env.NODE_ENV === "production" ? undefined : resetUrl,
+  });
+}

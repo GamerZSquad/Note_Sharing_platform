@@ -1,0 +1,41 @@
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { jsonError, jsonOk } from "@/lib/http";
+import { isAdmin } from "@/lib/permissions";
+import { deleteStoredFile } from "@/lib/storage";
+import { z } from "zod";
+
+const patchSchema = z.object({
+  id: z.string(),
+  status: z.enum(["PUBLISHED", "REMOVED", "PENDING"]),
+});
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const notes = await prisma.note.findMany({
+    include: {
+      uploader: { select: { name: true, email: true } },
+      subject: true,
+      _count: { select: { reports: true, ratings: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+  return jsonOk(notes);
+}
+
+export async function PATCH(request: Request) {
+  const session = await auth();
+  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return jsonError("Invalid update");
+  const note = await prisma.note.update({
+    where: { id: parsed.data.id },
+    data: { status: parsed.data.status },
+  });
+  if (parsed.data.status === "REMOVED") {
+    await deleteStoredFile(note.fileUrl);
+  }
+  return jsonOk(note);
+}

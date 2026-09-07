@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("STUDENT")
+  status        String    @default("PENDING_VERIFICATION")
+  department    String?
+  semester      Int?
+  bio           String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  notes                 Note[]
+  ratings               Rating[]
+  bookmarks             Bookmark[]
+  reports               Report[]
+  searchEvents          SearchEvent[]
+  verificationTokens    VerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Subject {
+  id         String  @id @default(cuid())
+  name       String
+  department String
+  semester   Int?
+  notes      Note[]
+
+  @@unique([name, department])
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  notes NoteTag[]
+}
+
+model Note {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  resourceType String   @default("NOTES")
+  unit         String?
+  uploaderId   String
+  uploader     User     @relation(fields: [uploaderId], references: [id])
+  subjectId    String
+  subject      Subject  @relation(fields: [subjectId], references: [id])
+  status       String   @default("PUBLISHED")
+  downloads    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tags      NoteTag[]
+  ratings   Rating[]
+  bookmarks Bookmark[]
+  reports   Report[]
+}
+
+model NoteTag {
+  noteId String
+  tagId  String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+}
+
+model Rating {
+  userId    String
+  noteId    String
+  rating    Int
+  helpful   Boolean?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@id([userId, noteId])
+}
+
+model Bookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  noteId     String?
+  note       Note?    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  externalId String?
+  external   ExternalResource? @relation(fields: [externalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Report {
+  id         String    @id @default(cuid())
+  noteId     String
+  note       Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason     String
+  details    String?
+  status     String    @default("OPEN")
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+}
+
+model ExternalResource {
+  id          String   @id @default(cuid())
+  title       String
+  url         String   @unique
+  domain      String
+  description String
+  sourceType  String
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  bookmarks   Bookmark[]
+}
+
+model TrustedDomain {
+  id      String  @id @default(cuid())
+  domain  String  @unique
+  label   String
+  boost   Float   @default(1.25)
+  enabled Boolean @default(true)
+}
+
+model SearchEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  query       String
+  resultCount Int
+  clicked     Boolean  @default(false)
+  clickType   String?
+  createdAt   DateTime @default(now())
+}

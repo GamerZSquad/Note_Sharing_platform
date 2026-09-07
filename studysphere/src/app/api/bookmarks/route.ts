@@ -1,0 +1,102 @@
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { jsonError, jsonOk } from "@/lib/http";
+import { z } from "zod";
+
+const createSchema = z.object({
+  type: z.enum(["NOTE", "EXTERNAL"]),
+  noteId: z.string().optional(),
+  external: z
+    .object({
+      title: z.string().min(1),
+      url: z.string().url(),
+      domain: z.string().min(1),
+      description: z.string().optional(),
+      sourceType: z.string().optional(),
+    })
+    .optional(),
+});
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user) return jsonError("Unauthorized", 401);
+
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId: session.user.id },
+    include: {
+      note: {
+        include: {
+          subject: true,
+          tags: { include: { tag: true } },
+        },
+      },
+      external: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return jsonOk(bookmarks);
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) return jsonError("Sign in to bookmark resources", 401);
+  const body = await request.json().catch(() => null);
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) return jsonError("Invalid bookmark");
+
+  if (parsed.data.type === "NOTE") {
+    if (!parsed.data.noteId) return jsonError("noteId is required");
+    const existing = await prisma.bookmark.findFirst({
+      where: { userId: session.user.id, noteId: parsed.data.noteId },
+    });
+    if (existing) return jsonOk(existing);
+    const bookmark = await prisma.bookmark.create({
+      data: {
+        userId: session.user.id,
+        type: "NOTE",
+        noteId: parsed.data.noteId,
+      },
+    });
+    return jsonOk(bookmark, 201);
+  }
+
+  if (!parsed.data.external) return jsonError("External resource is required");
+  const resource = await prisma.externalResource.upsert({
+    where: { url: parsed.data.external.url },
+    update: {},
+    create: {
+      title: parsed.data.external.title,
+      url: parsed.data.external.url,
+      domain: parsed.data.external.domain,
+      description: parsed.data.external.description ?? "",
+      sourceType: parsed.data.external.sourceType ?? "educational",
+    },
+  });
+
+  const existing = await prisma.bookmark.findFirst({
+    where: { userId: session.user.id, externalId: resource.id },
+  });
+  if (existing) return jsonOk(existing);
+
+  const bookmark = await prisma.bookmark.create({
+    data: {
+      userId: session.user.id,
+      type: "EXTERNAL",
+      externalId: resource.id,
+    },
+  });
+  return jsonOk(bookmark, 201);
+}
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user) return jsonError("Unauthorized", 401);
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return jsonError("Bookmark id is required");
+  await prisma.bookmark.deleteMany({
+    where: { id, userId: session.user.id },
+  });
+  return jsonOk({ deleted: true });
+}
