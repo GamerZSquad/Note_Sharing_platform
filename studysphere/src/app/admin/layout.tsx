@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 
 const items = [
   { href: "/admin", label: "Overview" },
@@ -23,10 +24,17 @@ export default async function AdminLayout({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <p className="text-xs uppercase tracking-[0.2em] text-terracotta">Admin</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BrandLogo size="sm" showWordmark />
+        <p className="text-xs uppercase tracking-[0.2em] text-terracotta">Admin</p>
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {items.map((item) => (
-          <Link key={item.href} href={item.href} className="rounded-full border border-line bg-paper px-3 py-1.5 text-sm">
+          <Link
+            key={item.href}
+            href={item.href}
+            className="rounded-full border border-line bg-paper px-3 py-1.5 text-sm"
+          >
             {item.label}
           </Link>
         ))}

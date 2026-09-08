@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 
 function VerifyStatus() {
   const searchParams = useSearchParams();
@@ -48,6 +49,9 @@ function VerifyStatus() {
 export default function VerifyEmailPage() {
   return (
     <section className="mx-auto max-w-md px-4 py-16">
+      <div className="mb-8 flex justify-center">
+        <BrandLogo size="lg" showTagline align="center" />
+      </div>
       <h1 className="font-serif text-4xl">Email verification</h1>
       <Suspense>
         <VerifyStatus />

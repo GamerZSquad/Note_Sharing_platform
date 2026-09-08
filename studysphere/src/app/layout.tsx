@@ -24,6 +24,10 @@ export const metadata: Metadata = {
   },
   description:
     "A full-stack academic resource discovery platform for uploading notes and finding trusted educational resources through unified search.",
+  icons: {
+    icon: [{ url: "/studysphere-mark.png", type: "image/png" }],
+    apple: [{ url: "/studysphere-mark.png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
