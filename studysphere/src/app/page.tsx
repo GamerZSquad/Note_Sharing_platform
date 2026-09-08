@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { SearchForm } from "@/components/search-form";
 import { prisma } from "@/lib/db";
 
@@ -13,17 +14,22 @@ export default async function HomePage() {
     <>
       <section className="border-b border-line bg-[radial-gradient(circle_at_top_left,#dceee4,transparent_28%),linear-gradient(180deg,#fffaf2,transparent)]">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-          <p className="text-xs uppercase tracking-[0.28em] text-muted">Academic resource discovery</p>
-          <h1 className="mt-4 font-serif text-5xl leading-tight sm:text-6xl">
+          <div className="mb-6 flex justify-center">
+            <BrandLogo size="lg" showTagline align="center" href={null} priority />
+          </div>
+          <h1 className="mt-2 font-serif text-4xl leading-tight text-ink sm:text-5xl">
             Search notes and trusted educational sources in one place.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted">
-            StudySphere searches community notes and the open web together, then ranks what is actually useful for the query.
+            StudySphere searches community notes and the open web together, then ranks what is
+            actually useful for the query.
           </p>
           <div className="mx-auto mt-8 max-w-2xl">
             <SearchForm size="lg" />
           </div>
-          <p className="mt-4 text-sm text-muted">Try “Operating System deadlock” or “DBMS normalization”.</p>
+          <p className="mt-4 text-sm text-muted">
+            Try “Operating System deadlock” or “DBMS normalization”.
+          </p>
         </div>
       </section>
 
@@ -56,9 +62,13 @@ export default async function HomePage() {
             <p className="text-xs uppercase tracking-[0.2em] text-muted">Web resources</p>
             <h2 className="mt-3 font-serif text-3xl">Discover, don’t rehost.</h2>
             <p className="mt-3 text-muted">
-              External results open on the original university, documentation, or OER site. Trusted domains get a ranking boost.
+              External results open on the original university, documentation, or OER site. Trusted
+              domains get a ranking boost.
             </p>
-            <Link href="/explore" className="mt-6 inline-block rounded-full border border-line px-4 py-2">
+            <Link
+              href="/explore"
+              className="mt-6 inline-block rounded-full border border-line px-4 py-2"
+            >
               Browse the library
             </Link>
           </div>

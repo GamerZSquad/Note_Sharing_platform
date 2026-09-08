@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { loginAction } from "./actions";
 
 function LoginForm() {
@@ -52,6 +53,9 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <section className="mx-auto max-w-md px-4 py-16">
+      <div className="mb-8 flex justify-center">
+        <BrandLogo size="lg" showTagline align="center" />
+      </div>
       <h1 className="font-serif text-4xl">Welcome back</h1>
       <p className="mt-2 text-muted">Sign in to upload, bookmark, and rate notes.</p>
       <Suspense>

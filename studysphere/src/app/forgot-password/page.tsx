@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
@@ -22,15 +23,27 @@ export default function ForgotPasswordPage() {
 
   return (
     <section className="mx-auto max-w-md px-4 py-16">
+      <div className="mb-8 flex justify-center">
+        <BrandLogo size="lg" showTagline align="center" />
+      </div>
       <h1 className="font-serif text-4xl">Forgot password</h1>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <input name="email" type="email" required placeholder="Email" className="w-full rounded-xl border border-line bg-paper px-4 py-3" />
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder="Email"
+          className="w-full rounded-xl border border-line bg-paper px-4 py-3"
+        />
         <button className="w-full rounded-full bg-forest py-3 text-white">Send reset link</button>
       </form>
       {message && <p className="mt-4 text-sm">{message}</p>}
       {resetUrl && (
         <p className="mt-2 text-sm">
-          Dev reset link: <Link className="underline" href={resetUrl}>Reset password</Link>
+          Dev reset link:{" "}
+          <Link className="underline" href={resetUrl}>
+            Reset password
+          </Link>
         </p>
       )}
     </section>

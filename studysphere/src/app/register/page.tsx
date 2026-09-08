@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { DEPARTMENTS, SEMESTERS } from "@/lib/constants";
 
 export default function RegisterPage() {
@@ -35,6 +36,9 @@ export default function RegisterPage() {
 
   return (
     <section className="mx-auto max-w-md px-4 py-16">
+      <div className="mb-8 flex justify-center">
+        <BrandLogo size="lg" showTagline align="center" />
+      </div>
       <h1 className="font-serif text-4xl">Create your account</h1>
       <p className="mt-2 text-muted">Students can search, upload, rate, and bookmark resources.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
