@@ -119,7 +119,10 @@ export async function searchCommunityNotes(
       };
     })
     .filter((note) => note.candidate)
-    .map(({ candidate: _candidate, ...note }) => note);
+    .map(({ candidate, ...note }) => {
+      void candidate;
+      return note;
+    });
 
   const sort = filters.sort ?? "relevant";
   ranked.sort((a, b) => {

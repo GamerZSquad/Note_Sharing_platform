@@ -19,8 +19,12 @@ export async function GET(request: Request) {
     source: searchParams.get("source") || undefined,
     sort: searchParams.get("sort") || undefined,
     page: searchParams.get("page") || undefined,
+    pageSize: searchParams.get("pageSize") || undefined,
   });
-  if (!parsed.success) return jsonError("Enter a search query");
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Enter a search query";
+    return jsonError(message);
+  }
 
   const session = await auth();
   const result = await unifiedSearch(parsed.data.q, parsed.data, session?.user?.id);

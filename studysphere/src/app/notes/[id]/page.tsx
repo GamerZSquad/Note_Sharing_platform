@@ -53,11 +53,19 @@ export default async function NotePage({
           ))}
         </div>
         <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-paper">
-          {note.fileType === "pdf" ? (
+          {!session?.user ? (
+            <div className="p-8 text-sm text-muted">
+              Sign in to preview this file.{" "}
+              <a href={`/login?next=/notes/${note.id}`} className="text-forest underline">
+                Log in
+              </a>
+            </div>
+          ) : note.fileType === "pdf" ? (
             <iframe title="PDF preview" src={previewUrl} className="h-[70vh] w-full" />
           ) : (
             <div className="p-8 text-sm text-muted">
-              Preview is available for PDFs. Download the {note.fileType.toUpperCase()} file to view it.
+              Preview is available for PDFs. Download the {note.fileType.toUpperCase()} file to view
+              it.
             </div>
           )}
         </div>

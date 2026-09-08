@@ -83,7 +83,10 @@ async function searchCatalog(
       };
     })
     .filter((item) => item.matched || item.relevance > 0.2)
-    .map(({ matched: _m, ...item }) => item);
+    .map(({ matched, ...item }) => {
+      void matched;
+      return item;
+    });
 }
 
 async function searchWikipedia(query: string, trusted: Trusted[]): Promise<NormalizedResource[]> {

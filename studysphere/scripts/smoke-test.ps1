@@ -80,7 +80,8 @@ if ($noteId) {
   $notesResp = curl.exe -s "$base/api/notes/$noteId" | ConvertFrom-Json
   $filePath = $notesResp.data.fileUrl
   if ($filePath) {
-    Test-Route "PDF preview" "$base/api/files/$filePath" @("200")
+    Test-Route "PDF preview (guest)" "$base/api/files/$filePath" @("401")
+    Test-Route "PDF preview (auth)" "$base/api/files/$filePath" @("200") $cookieStudent
   }
 }
 

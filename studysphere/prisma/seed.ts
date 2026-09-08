@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 function pdf(title: string, lines: string[]): Buffer {
   const escapedTitle = title.replace(/[()\\]/g, " ");
   const body = lines
-    .map((line, index) => `0 -22 Td (${line.replace(/[()\\]/g, " ")}) Tj`)
+    .map((line) => `0 -22 Td (${line.replace(/[()\\]/g, " ")}) Tj`)
     .join(" ");
   const stream = `BT /F1 20 Tf 50 740 Td (${escapedTitle}) Tj /F1 12 Tf 0 -32 Td ${body} ET`;
   const objects = [

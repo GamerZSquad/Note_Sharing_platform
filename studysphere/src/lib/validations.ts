@@ -69,6 +69,7 @@ export const searchQuerySchema = z.object({
   source: z.string().optional(),
   sort: z.enum(["relevant", "downloads", "rating", "newest"]).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).optional().default(10),
 });
 
 export type UploadFileInput = {

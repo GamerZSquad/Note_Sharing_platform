@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
+import { createNoteBookmark } from "@/lib/bookmarks";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -47,18 +48,12 @@ export async function POST(request: Request) {
 
   if (parsed.data.type === "NOTE") {
     if (!parsed.data.noteId) return jsonError("noteId is required");
-    const existing = await prisma.bookmark.findFirst({
-      where: { userId: session.user.id, noteId: parsed.data.noteId },
+    const result = await createNoteBookmark({
+      userId: session.user.id,
+      noteId: parsed.data.noteId,
     });
-    if (existing) return jsonOk(existing);
-    const bookmark = await prisma.bookmark.create({
-      data: {
-        userId: session.user.id,
-        type: "NOTE",
-        noteId: parsed.data.noteId,
-      },
-    });
-    return jsonOk(bookmark, 201);
+    if (!result.ok) return jsonError(result.error, result.status);
+    return jsonOk(result.bookmark, result.status);
   }
 
   if (!parsed.data.external) return jsonError("External resource is required");

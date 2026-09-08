@@ -7,13 +7,14 @@ import Link from "next/link";
 function VerifyStatus() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
-  const [message, setMessage] = useState("Verifying…");
+  const [message, setMessage] = useState(
+    token ? "Verifying…" : "Missing verification token.",
+  );
 
   useEffect(() => {
-    if (!token) {
-      setMessage("Missing verification token.");
-      return;
-    }
+    if (!token) return;
+
+    let cancelled = false;
     fetch("/api/auth/verify-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,9 +22,17 @@ function VerifyStatus() {
     })
       .then(async (response) => {
         const data = await response.json();
-        setMessage(data.data?.message ?? data.error ?? "Verification failed");
+        if (!cancelled) {
+          setMessage(data.data?.message ?? data.error ?? "Verification failed");
+        }
       })
-      .catch(() => setMessage("Verification failed"));
+      .catch(() => {
+        if (!cancelled) setMessage("Verification failed");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   return (
