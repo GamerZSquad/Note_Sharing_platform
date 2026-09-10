@@ -1,10 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
-import { resolveStoredFile } from "@/lib/storage";
-import { createReadStream } from "fs";
-import { stat } from "fs/promises";
-import { Readable } from "stream";
+import { openStoredFile } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -26,23 +23,17 @@ export async function GET(
     return jsonError("File not found", 404);
   }
 
-  const absolute = resolveStoredFile(relative);
-  if (!absolute) return jsonError("Invalid path", 400);
+  const file = await openStoredFile(relative);
+  if (!file) return jsonError("File not found", 404);
 
-  try {
-    await stat(absolute);
-  } catch {
-    return jsonError("File not found", 404);
-  }
-
-  const nodeStream = createReadStream(absolute);
-  const webStream = Readable.toWeb(nodeStream) as unknown as BodyInit;
-  return new Response(webStream, {
+  return new Response(file.stream, {
     headers: {
       "Content-Type":
-        note.fileType === "pdf" ? "application/pdf" : "application/octet-stream",
+        file.contentType ??
+        (note.fileType === "pdf" ? "application/pdf" : "application/octet-stream"),
       "Content-Disposition": "inline",
       "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

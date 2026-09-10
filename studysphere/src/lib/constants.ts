@@ -61,7 +61,7 @@ export const SORT_OPTIONS = [
 ] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number];
 
-export const MAX_FILE_SIZE = 15 * 1024 * 1024;
+export const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export const ALLOWED_MIME_TYPES: Record<string, string> = {
   "application/pdf": "pdf",

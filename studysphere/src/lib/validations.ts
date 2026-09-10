@@ -86,7 +86,7 @@ export function validateUploadFile(file: UploadFileInput): {
     return { ok: false, error: "A file is required" };
   }
   if (file.size > MAX_FILE_SIZE) {
-    return { ok: false, error: "File must be 15MB or smaller" };
+    return { ok: false, error: "File must be 50MB or smaller" };
   }
   const extension = ALLOWED_MIME_TYPES[file.type];
   if (!extension) {

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   });
 
   const verifyUrl = appUrl(`/verify-email?token=${token}`);
-  await sendMail({
+  const delivered = await sendMail({
     to: user.email,
     subject: "Verify your StudySphere account",
     text: `Hi ${user.name},\n\nConfirm your email by opening this link:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
@@ -54,7 +54,9 @@ export async function POST(request: Request) {
 
   return jsonOk(
     {
-      message: "Account created. Check your email to verify your account.",
+      message: delivered
+        ? "Account created. Check your email to verify your account."
+        : "Account created, but the verification email could not be sent. Please contact support to activate your account.",
       verifyUrl: process.env.NODE_ENV === "production" ? undefined : verifyUrl,
     },
     201,

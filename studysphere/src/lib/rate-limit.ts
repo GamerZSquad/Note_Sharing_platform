@@ -1,3 +1,10 @@
+/**
+ * In-memory rate limiter.
+ *
+ * Limitation on Vercel/serverless: each isolate has its own Map, so limits are
+ * not shared across instances and reset on cold starts. Keep for now; replace
+ * with Redis/Upstash later if stricter global limits are required.
+ */
 type Bucket = { count: number; resetAt: number };
 
 const buckets = new Map<string, Bucket>();

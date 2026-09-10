@@ -1,10 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
-import { resolveStoredFile } from "@/lib/storage";
-import { createReadStream } from "fs";
-import { stat } from "fs/promises";
-import { Readable } from "stream";
+import { openStoredFile } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -17,32 +14,26 @@ export async function GET(
   const note = await prisma.note.findUnique({ where: { id } });
   if (!note || note.status !== "PUBLISHED") return jsonError("Note not found", 404);
 
-  const absolute = resolveStoredFile(note.fileUrl);
-  if (!absolute) return jsonError("File missing", 404);
-
-  try {
-    await stat(absolute);
-  } catch {
-    return jsonError("File missing", 404);
-  }
+  const file = await openStoredFile(note.fileUrl);
+  if (!file) return jsonError("File missing", 404);
 
   await prisma.note.update({
     where: { id },
     data: { downloads: { increment: 1 } },
   });
 
-  const nodeStream = createReadStream(absolute);
-  const webStream = Readable.toWeb(nodeStream) as unknown as BodyInit;
   const filename = note.title.replace(/[^\w\- ]+/g, "") || "note";
 
-  return new Response(webStream, {
+  return new Response(file.stream, {
     headers: {
       "Content-Type":
-        note.fileType === "pdf"
+        file.contentType ??
+        (note.fileType === "pdf"
           ? "application/pdf"
-          : "application/octet-stream",
+          : "application/octet-stream"),
       "Content-Disposition": `attachment; filename="${filename}.${note.fileType}"`,
       "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

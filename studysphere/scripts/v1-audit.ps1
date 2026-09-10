@@ -170,10 +170,10 @@ $badBody = Get-Content -Raw $badTmp.FullName
 Remove-Item $badTmp.FullName -ErrorAction SilentlyContinue
 if ($badCode -match "400" -and $badBody -match "allowed|Only") { Pass "Reject unsupported file type" } else { Fail "Reject unsupported file type" "code=$badCode body=$badBody" }
 
-# Oversized file (simulate >15MB with sparse? Write small claim via checking validation with large content is slow - create 16MB file)
+# Oversized file (>50MB) — create 51MB file
 $bigFile = Join-Path $PWD "audit-big.pdf"
 $fs = [IO.File]::Create($bigFile)
-$fs.SetLength(16MB)
+$fs.SetLength(51MB)
 $fs.Close()
 # Prepend PDF header so name/extension look valid
 $bigTmp = New-TemporaryFile
@@ -185,7 +185,7 @@ $bigCode = curl.exe -s -o $bigTmp.FullName -w "%{http_code}" -b $studentCookie -
   -F "file=@$bigFile;type=application/pdf"
 $bigBody = Get-Content -Raw $bigTmp.FullName
 Remove-Item $bigTmp.FullName -ErrorAction SilentlyContinue
-if ($bigCode -match "400" -and $bigBody -match "15MB|smaller|size") { Pass "Reject oversized file" } else { Fail "Reject oversized file" "code=$bigCode body=$bigBody" }
+if ($bigCode -match "400" -and $bigBody -match "50MB|smaller|size") { Pass "Reject oversized file" } else { Fail "Reject oversized file" "code=$bigCode body=$bigBody" }
 
 # ---------- 3 SEARCH ----------
 Write-Host "`n--- 3. UNIFIED SEARCH ---" -ForegroundColor Cyan

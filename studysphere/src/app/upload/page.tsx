@@ -54,7 +54,7 @@ export default function UploadPage() {
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setError("File must be 15MB or smaller");
+      setError("File must be 50MB or smaller");
       return;
     }
 
@@ -69,18 +69,84 @@ export default function UploadPage() {
     event.preventDefault();
     setPending(true);
     setError("");
-    const form = event.currentTarget;
-    const response = await fetch("/api/notes", {
-      method: "POST",
-      body: new FormData(form),
-    });
-    const data = await response.json();
-    setPending(false);
-    if (!response.ok) {
-      setError(data.error ?? "Upload failed");
-      return;
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const file = selectedFile;
+      if (!file) {
+        setError("A file is required");
+        return;
+      }
+
+      const strategyRes = await fetch("/api/notes/upload-strategy");
+      const strategyJson = await strategyRes.json();
+      const strategy = strategyJson.data?.strategy === "blob" ? "blob" : "local";
+
+      if (strategy === "local") {
+        const response = await fetch("/api/notes", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setError(data.error ?? "Upload failed");
+          return;
+        }
+        router.push(`/notes/${data.data.id}`);
+        return;
+      }
+
+      // Production / Blob: metadata + token via StudySphere APIs; PDF bytes go browser → Blob.
+      const prepareRes = await fetch("/api/notes/prepare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.get("title"),
+          description: formData.get("description"),
+          subjectId: formData.get("subjectId"),
+          unit: formData.get("unit") || undefined,
+          tags: formData.get("tags") || undefined,
+          resourceType: formData.get("resourceType") || "NOTES",
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        }),
+      });
+      const prepareData = await prepareRes.json();
+      if (!prepareRes.ok) {
+        setError(prepareData.error ?? "Could not start upload");
+        return;
+      }
+
+      const { noteId, pathname } = prepareData.data as {
+        noteId: string;
+        pathname: string;
+      };
+
+      const { upload } = await import("@vercel/blob/client");
+      await upload(pathname, file, {
+        access: "private",
+        handleUploadUrl: "/api/blob/upload",
+        clientPayload: noteId,
+        multipart: file.size > 4 * 1024 * 1024, // required above Vercel function body limit; covers up to 50MB
+      });
+
+      const finalizeRes = await fetch(`/api/notes/${noteId}/finalize`, {
+        method: "POST",
+      });
+      const finalizeData = await finalizeRes.json();
+      if (!finalizeRes.ok) {
+        setError(finalizeData.error ?? "Could not finish upload");
+        return;
+      }
+
+      router.push(`/notes/${noteId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setPending(false);
     }
-    router.push(`/notes/${data.data.id}`);
   }
 
   return (
@@ -251,7 +317,7 @@ export default function UploadPage() {
                   </span>
                 </span>
                 <span className="mt-5 text-xs uppercase tracking-[0.16em] text-muted">
-                  PDF · DOC · PPT · Maximum 15 MB
+                  PDF · DOC · PPT · Maximum 50 MB
                 </span>
               </label>
             ) : (
