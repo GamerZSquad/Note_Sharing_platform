@@ -5,6 +5,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 const newsreader = Newsreader({
   subsets: ["latin"],
   variable: "--font-newsreader",

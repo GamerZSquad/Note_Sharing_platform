@@ -69,10 +69,19 @@ describe("file validation", () => {
   it("rejects oversized files", () => {
     const result = validateUploadFile({
       type: "application/pdf",
-      size: 20 * 1024 * 1024,
+      size: 51 * 1024 * 1024,
       name: "notes.pdf",
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("accepts files at the 50MB limit", () => {
+    const result = validateUploadFile({
+      type: "application/pdf",
+      size: 50 * 1024 * 1024,
+      name: "notes.pdf",
+    });
+    expect(result.ok).toBe(true);
   });
 
   it("accepts pdf uploads", () => {

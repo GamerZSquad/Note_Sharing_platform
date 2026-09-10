@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+import { saveNoteFile } from "../src/lib/storage";
 
 const prisma = new PrismaClient();
 
@@ -90,7 +89,6 @@ async function main() {
   );
 
   const [os, dbms, dsa, cn] = subjects;
-  const uploadRoot = path.resolve(process.env.UPLOAD_DIR ?? "./uploads");
 
   const notesSeed = [
     {
@@ -182,14 +180,16 @@ async function main() {
         downloads: item.downloads,
       },
     });
-    const dir = path.join(uploadRoot, note.id);
-    await mkdir(dir, { recursive: true });
-    const filename = "notes.pdf";
     const buffer = pdf(item.title, item.lines);
-    await writeFile(path.join(dir, filename), buffer);
+    const stored = await saveNoteFile({
+      noteId: note.id,
+      originalName: "notes.pdf",
+      buffer,
+      extension: "pdf",
+    });
     await prisma.note.update({
       where: { id: note.id },
-      data: { fileUrl: `${note.id}/${filename}`, fileSize: buffer.length },
+      data: { fileUrl: stored.relativePath, fileSize: buffer.length },
     });
     for (const name of item.tags) {
       const tag = await prisma.tag.upsert({

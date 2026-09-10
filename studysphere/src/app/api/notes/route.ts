@@ -2,18 +2,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
-import { saveNoteFile } from "@/lib/storage";
+import { parseTags } from "@/lib/notes-upload";
+import { isBlobStorageEnabled, saveNoteFile } from "@/lib/storage";
 import { noteUploadSchema, validateUploadFile } from "@/lib/validations";
 import { randomUUID } from "crypto";
-
-function parseTags(raw?: string): string[] {
-  if (!raw) return [];
-  return raw
-    .split(/[,#]/)
-    .map((tag) => tag.trim().toLowerCase())
-    .filter((tag) => tag.length >= 2)
-    .slice(0, 8);
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -63,7 +55,19 @@ export async function GET(request: Request) {
   );
 }
 
+/**
+ * Local-development upload path: FormData with file bytes.
+ * When Blob is configured, clients must use prepare → direct Blob upload → finalize
+ * so PDF bytes never pass through the serverless function body limit.
+ */
 export async function POST(request: Request) {
+  if (isBlobStorageEnabled()) {
+    return jsonError(
+      "Blob storage is enabled. Use the direct-to-Blob upload flow.",
+      400,
+    );
+  }
+
   const session = await auth();
   if (!session?.user) return jsonError("Sign in to upload notes", 401);
   if (session.user.status === "SUSPENDED") {

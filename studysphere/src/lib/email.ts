@@ -4,6 +4,15 @@ type Mail = {
   text: string;
 };
 
+/**
+ * Email delivery is NOT implemented yet.
+ * Production still needs a real provider for:
+ * - email verification
+ * - forgot password
+ * - password reset
+ *
+ * SMTP_* vars are reserved; when set we only log intent today.
+ */
 export async function sendMail(mail: Mail): Promise<void> {
   if (process.env.SMTP_HOST && process.env.SMTP_USER) {
     console.info(`[email] SMTP configured but transport is not wired yet: ${mail.subject} -> ${mail.to}`);
