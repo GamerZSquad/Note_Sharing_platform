@@ -59,13 +59,17 @@ See [docs/VERCEL_MIGRATION.md](./docs/VERCEL_MIGRATION.md) for details, blockers
 - Rate limiting, file type/size checks, path-safe storage
 - Unit tests for ranking, permissions, and file validation
 
-## Email (production blocker)
+## Email
 
-Console/dev logging only today. Production still needs a real email provider for:
+Delivered through [Resend](https://resend.com). Set `RESEND_API_KEY` and `EMAIL_FROM`
+(with a verified sending domain) to enable:
 
 - email verification
 - forgot password
 - password reset
+
+Without those variables no mail is sent; outside production the register and
+forgot-password responses return the link directly so local development still works.
 
 ## Rate limiting (serverless note)
 

@@ -9,7 +9,7 @@ Implementation status: **code-ready**. Do **not** deploy until Neon + Blob + env
 | Database | PostgreSQL via `DATABASE_URL` / `DIRECT_URL` | Neon PostgreSQL |
 | Files | `UPLOAD_DIR` filesystem (`./uploads`) | Private Vercel Blob |
 | Auth | Auth.js Credentials + JWT | Same |
-| Email | Console log stub | Still required (not implemented) |
+| Email | Link returned in response (no send) | Resend (`RESEND_API_KEY` + `EMAIL_FROM`) |
 | Rate limits | In-memory Map | Same (best-effort on serverless) |
 
 ## Database
@@ -58,6 +58,8 @@ Required for production:
 - `AUTH_SECRET`
 - `AUTH_URL`
 - `BLOB_READ_WRITE_TOKEN` and/or connected Blob store (`BLOB_STORE_ID`)
+- `RESEND_API_KEY`
+- `EMAIL_FROM` (address on a domain verified in Resend)
 
 Optional: `BRAVE_SEARCH_API_KEY`, `UPLOAD_DIR` (local only).
 
@@ -77,7 +79,7 @@ Optional: `BRAVE_SEARCH_API_KEY`, `UPLOAD_DIR` (local only).
 
 ## Remaining blockers
 
-1. **Email provider** — verification / password reset still log to console.
+1. ~~**Email provider**~~ — done: Resend via `RESEND_API_KEY` + `EMAIL_FROM`. Both must be set in Vercel, and the `EMAIL_FROM` domain must be verified in Resend, or verification / reset links will not be delivered.
 2. **In-memory rate limiter** — not shared across serverless instances.
 3. **Manual Neon + Blob + migrate deploy** — required before first production deploy.
 4. **Local Postgres** — local `npm run dev` / seed now need PostgreSQL; SQLite is backup-only.
