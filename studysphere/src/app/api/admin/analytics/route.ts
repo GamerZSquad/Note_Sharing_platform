@@ -1,10 +1,9 @@
-import { auth } from "@/auth";
 import { getAdminAnalytics } from "@/lib/analytics";
-import { jsonError, jsonOk } from "@/lib/http";
-import { isAdmin } from "@/lib/permissions";
+import { jsonOk } from "@/lib/http";
+import { requireAdminUser } from "@/lib/session";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   return jsonOk(await getAdminAnalytics());
 }

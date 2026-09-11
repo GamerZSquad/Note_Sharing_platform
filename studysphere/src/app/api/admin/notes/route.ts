@@ -1,7 +1,6 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
-import { isAdmin } from "@/lib/permissions";
+import { requireAdminUser } from "@/lib/session";
 import { deleteStoredFile } from "@/lib/storage";
 import { z } from "zod";
 
@@ -11,8 +10,8 @@ const patchSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const notes = await prisma.note.findMany({
     include: {
       uploader: { select: { name: true, email: true } },
@@ -26,8 +25,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("Invalid update");
   const note = await prisma.note.update({

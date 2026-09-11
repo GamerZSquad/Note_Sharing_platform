@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
+import { canReadNoteMetadata } from "@/lib/note-access";
 import { canManageNote } from "@/lib/permissions";
+import { requireActiveUser } from "@/lib/session";
 import { deleteStoredFile } from "@/lib/storage";
 
 export async function GET(
@@ -9,6 +11,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  const session = await auth();
   const note = await prisma.note.findUnique({
     where: { id },
     include: {
@@ -18,7 +21,18 @@ export async function GET(
       ratings: true,
     },
   });
-  if (!note || note.status === "REMOVED") return jsonError("Note not found", 404);
+
+  if (
+    !note ||
+    !canReadNoteMetadata({
+      status: note.status,
+      uploaderId: note.uploaderId,
+      viewerId: session?.user?.id,
+      viewerRole: session?.user?.role,
+    })
+  ) {
+    return jsonError("Note not found", 404);
+  }
 
   const ratings = note.ratings.map((r) => r.rating);
   const avgRating =
@@ -39,15 +53,15 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user) return jsonError("Unauthorized", 401);
+  const gate = await requireActiveUser("Unauthorized");
+  if (!gate.ok) return gate.response;
   const { id } = await context.params;
   const note = await prisma.note.findUnique({ where: { id } });
   if (!note) return jsonError("Note not found", 404);
   if (
     !canManageNote({
-      role: session.user.role,
-      userId: session.user.id,
+      role: gate.user.role,
+      userId: gate.user.id,
       uploaderId: note.uploaderId,
     })
   ) {

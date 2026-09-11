@@ -1,7 +1,7 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { createNoteBookmark } from "@/lib/bookmarks";
+import { requireActiveUser } from "@/lib/session";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -19,11 +19,11 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) return jsonError("Unauthorized", 401);
+  const gate = await requireActiveUser("Unauthorized");
+  if (!gate.ok) return gate.response;
 
   const bookmarks = await prisma.bookmark.findMany({
-    where: { userId: session.user.id },
+    where: { userId: gate.user.id },
     include: {
       note: {
         include: {
@@ -40,8 +40,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) return jsonError("Sign in to bookmark resources", 401);
+  const gate = await requireActiveUser("Sign in to bookmark resources");
+  if (!gate.ok) return gate.response;
   const body = await request.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return jsonError("Invalid bookmark");
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (parsed.data.type === "NOTE") {
     if (!parsed.data.noteId) return jsonError("noteId is required");
     const result = await createNoteBookmark({
-      userId: session.user.id,
+      userId: gate.user.id,
       noteId: parsed.data.noteId,
     });
     if (!result.ok) return jsonError(result.error, result.status);
@@ -70,13 +70,13 @@ export async function POST(request: Request) {
   });
 
   const existing = await prisma.bookmark.findFirst({
-    where: { userId: session.user.id, externalId: resource.id },
+    where: { userId: gate.user.id, externalId: resource.id },
   });
   if (existing) return jsonOk(existing);
 
   const bookmark = await prisma.bookmark.create({
     data: {
-      userId: session.user.id,
+      userId: gate.user.id,
       type: "EXTERNAL",
       externalId: resource.id,
     },
@@ -85,13 +85,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await auth();
-  if (!session?.user) return jsonError("Unauthorized", 401);
+  const gate = await requireActiveUser("Unauthorized");
+  if (!gate.ok) return gate.response;
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   if (!id) return jsonError("Bookmark id is required");
   await prisma.bookmark.deleteMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId: gate.user.id },
   });
   return jsonOk({ deleted: true });
 }

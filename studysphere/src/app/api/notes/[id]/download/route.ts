@@ -1,14 +1,14 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
+import { requireActiveUser } from "@/lib/session";
 import { openStoredFile } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user) return jsonError("Sign in to download notes", 401);
+  const gate = await requireActiveUser("Sign in to download notes");
+  if (!gate.ok) return gate.response;
 
   const { id } = await context.params;
   const note = await prisma.note.findUnique({ where: { id } });

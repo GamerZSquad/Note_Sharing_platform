@@ -1,7 +1,6 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
-import { isAdmin } from "@/lib/permissions";
+import { requireAdminUser } from "@/lib/session";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -11,15 +10,15 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const domains = await prisma.trustedDomain.findMany({ orderBy: { domain: "asc" } });
   return jsonOk(domains);
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const parsed = createSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("Invalid domain");
   const domain = parsed.data.domain.toLowerCase().replace(/^www\./, "");
@@ -34,8 +33,8 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const body = await request.json().catch(() => null);
   const id = typeof body?.id === "string" ? body.id : "";
   if (!id) return jsonError("id is required");
@@ -47,8 +46,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user.role)) return jsonError("Forbidden", 403);
+  const gate = await requireAdminUser();
+  if (!gate.ok) return gate.response;
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return jsonError("id is required");
   await prisma.trustedDomain.delete({ where: { id } });

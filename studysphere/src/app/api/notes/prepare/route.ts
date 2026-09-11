@@ -1,8 +1,8 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { parseTags, notePrepareSchema } from "@/lib/notes-upload";
+import { requireActiveUser } from "@/lib/session";
 import { buildNoteRelativePath, isBlobStorageEnabled } from "@/lib/storage";
 import { validateUploadFile } from "@/lib/validations";
 import { randomUUID } from "crypto";
@@ -16,13 +16,10 @@ export async function POST(request: Request) {
     return jsonError("Direct Blob uploads are not configured. Use local FormData upload.", 400);
   }
 
-  const session = await auth();
-  if (!session?.user) return jsonError("Sign in to upload notes", 401);
-  if (session.user.status === "SUSPENDED") {
-    return jsonError("This account is suspended", 403);
-  }
+  const gate = await requireActiveUser("Sign in to upload notes");
+  if (!gate.ok) return gate.response;
 
-  const limited = rateLimit(clientKey(request, `upload:${session.user.id}`), 10, 60 * 60_000);
+  const limited = rateLimit(clientKey(request, `upload:${gate.user.id}`), 10, 60 * 60_000);
   if (!limited.ok) return jsonError("Upload limit reached. Try again later.", 429);
 
   const body = await request.json().catch(() => null);
@@ -61,7 +58,7 @@ export async function POST(request: Request) {
       fileSize: parsed.data.fileSize,
       resourceType: parsed.data.resourceType,
       unit: parsed.data.unit,
-      uploaderId: session.user.id,
+      uploaderId: gate.user.id,
       subjectId: subject.id,
       status: "PENDING",
       tags: {

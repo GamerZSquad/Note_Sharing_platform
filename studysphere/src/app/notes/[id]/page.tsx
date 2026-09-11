@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { NoteActions } from "@/components/note-actions";
+import { canReadNoteMetadata } from "@/lib/note-access";
 import { average, formatBytes, timeAgo } from "@/lib/utils";
 
 export default async function NotePage({
@@ -25,7 +26,17 @@ export default async function NotePage({
       ratings: true,
     },
   });
-  if (!note || note.status === "REMOVED") notFound();
+  if (
+    !note ||
+    !canReadNoteMetadata({
+      status: note.status,
+      uploaderId: note.uploaderId,
+      viewerId: session?.user?.id,
+      viewerRole: session?.user?.role,
+    })
+  ) {
+    notFound();
+  }
 
   const avgRating = average(note.ratings.map((r) => r.rating));
   const previewUrl = `/api/files/${note.fileUrl}`;

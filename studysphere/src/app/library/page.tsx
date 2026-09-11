@@ -1,16 +1,14 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { NoteCard } from "@/components/note-card";
 import { WebCard } from "@/components/web-card";
+import { requireActivePageUser } from "@/lib/session";
 import { average } from "@/lib/utils";
 
 export default async function LibraryPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?next=/library");
+  const user = await requireActivePageUser("/library");
 
   const bookmarks = await prisma.bookmark.findMany({
-    where: { userId: session.user.id },
+    where: { userId: user.id },
     include: {
       note: {
         include: {

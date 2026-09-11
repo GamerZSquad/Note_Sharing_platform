@@ -1,6 +1,6 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
+import { requireActiveUser } from "@/lib/session";
 import { isBlobStorageEnabled, verifyStoredObject } from "@/lib/storage";
 
 /**
@@ -15,14 +15,14 @@ export async function POST(
     return jsonError("Blob storage is not configured", 400);
   }
 
-  const session = await auth();
-  if (!session?.user) return jsonError("Sign in to finish upload", 401);
+  const gate = await requireActiveUser("Sign in to finish upload");
+  if (!gate.ok) return gate.response;
 
   const { id } = await context.params;
   const note = await prisma.note.findFirst({
     where: {
       id,
-      uploaderId: session.user.id,
+      uploaderId: gate.user.id,
       status: "PENDING",
     },
   });

@@ -1,17 +1,15 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { NoteCard } from "@/components/note-card";
+import { requireActivePageUser } from "@/lib/session";
 import { average } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?next=/dashboard");
+  const user = await requireActivePageUser("/dashboard");
 
   const [notes, bookmarks, ratings] = await Promise.all([
     prisma.note.findMany({
-      where: { uploaderId: session.user.id, status: { not: "REMOVED" } },
+      where: { uploaderId: user.id, status: { not: "REMOVED" } },
       include: {
         subject: true,
         ratings: true,
@@ -19,15 +17,15 @@ export default async function DashboardPage() {
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.bookmark.count({ where: { userId: session.user.id } }),
-    prisma.rating.count({ where: { note: { uploaderId: session.user.id }, helpful: true } }),
+    prisma.bookmark.count({ where: { userId: user.id } }),
+    prisma.rating.count({ where: { note: { uploaderId: user.id }, helpful: true } }),
   ]);
 
   const downloads = notes.reduce((sum, note) => sum + note.downloads, 0);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="font-serif text-4xl">Welcome back, {session.user.name?.split(" ")[0]}</h1>
+      <h1 className="font-serif text-4xl">Welcome back, {user.name?.split(" ")[0]}</h1>
       <div className="mt-8 grid gap-4 sm:grid-cols-4">
         {[
           ["Notes uploaded", notes.length],

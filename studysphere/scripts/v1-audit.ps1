@@ -1,5 +1,14 @@
 $ErrorActionPreference = "Continue"
 $base = "http://localhost:3000"
+
+# Admin credentials come from the environment (same vars the seed uses); never hardcoded.
+$adminEmail = $env:ADMIN_EMAIL
+$adminPassword = $env:ADMIN_PASSWORD
+if (-not $adminEmail -or -not $adminPassword) {
+  Write-Host "ADMIN_EMAIL and ADMIN_PASSWORD must be set to run the admin checks." -ForegroundColor Red
+  exit 1
+}
+
 $bugs = @()
 $passed = @()
 $failed = @()
@@ -91,7 +100,7 @@ $demoSess = (Code "$base/api/auth/session" $demoCookie).Body | ConvertFrom-Json
 if ($demoSess.user) { Pass "Demo student login" } else { Fail "Demo student login" }
 
 $adminCookie = Join-Path $PWD "audit-admin.txt"
-Login "admin@studysphere.dev" "Admin123" $adminCookie | Out-Null
+Login $adminEmail $adminPassword $adminCookie | Out-Null
 $adminSess = (Code "$base/api/auth/session" $adminCookie).Body | ConvertFrom-Json
 if ($adminSess.user.role -eq "ADMIN") { Pass "Admin login + role" } else { Fail "Admin login + role" ($adminSess | ConvertTo-Json -Compress) }
 

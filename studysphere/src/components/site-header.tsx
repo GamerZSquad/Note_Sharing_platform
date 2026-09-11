@@ -1,8 +1,9 @@
 import { auth, signOut } from "@/auth";
 import { BrandLogo } from "@/components/brand-logo";
+import { MobileNav, type MobileNavLink } from "@/components/mobile-nav";
 import Link from "next/link";
 
-const links = [
+const desktopLinks = [
   { href: "/explore", label: "Explore" },
   { href: "/search", label: "Search" },
   { href: "/upload", label: "Upload" },
@@ -12,13 +13,23 @@ const links = [
 export async function SiteHeader() {
   const session = await auth();
 
+  const mobileLinks: MobileNavLink[] = [
+    ...desktopLinks,
+    ...(session?.user
+      ? [{ href: "/profile", label: "Profile" } satisfies MobileNavLink]
+      : []),
+    ...(session?.user.role === "ADMIN"
+      ? [{ href: "/admin", label: "Admin", tone: "accent" as const }]
+      : []),
+  ];
+
   return (
-    <header className="border-b border-line bg-paper/90 backdrop-blur sticky top-0 z-40">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
+      <div className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <BrandLogo size="md" showTagline priority className="shrink-0" />
-        <div className="ml-auto flex items-center gap-3 sm:gap-5">
-          <nav className="hidden items-center gap-5 text-sm md:flex">
-            {links.map((link) => (
+        <div className="ml-auto flex items-center gap-2 sm:gap-5">
+          <nav className="hidden items-center gap-5 text-sm md:flex" aria-label="Primary">
+            {desktopLinks.map((link) => (
               <Link key={link.href} href={link.href} className="text-muted hover:text-ink">
                 {link.label}
               </Link>
@@ -60,6 +71,7 @@ export async function SiteHeader() {
               </>
             )}
           </div>
+          <MobileNav links={mobileLinks} />
         </div>
       </div>
     </header>
