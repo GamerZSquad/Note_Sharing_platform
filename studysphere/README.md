@@ -29,10 +29,31 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Demo accounts
 
-| Role    | Email                     | Password   |
-| ------- | ------------------------- | ---------- |
-| Student | student@studysphere.dev   | Student123 |
-| Admin   | admin@studysphere.dev     | Admin123   |
+The seed needs `ADMIN_EMAIL` and `ADMIN_PASSWORD` and refuses to run without them,
+so the admin credential is whatever you supply — there is no default:
+
+```powershell
+$env:ADMIN_EMAIL="admin@example.com"; $env:ADMIN_PASSWORD="choose-a-strong-one"
+npx prisma db seed
+```
+
+| Role    | Email                   | Password           |
+| ------- | ----------------------- | ------------------ |
+| Student | student@studysphere.dev | Student123         |
+| Admin   | `$ADMIN_EMAIL`          | `$ADMIN_PASSWORD`  |
+
+`npx prisma db seed` deletes every row before inserting demo data, so it is for local
+development only. To create the first admin on a real database, see below.
+
+### First admin on a real database
+
+```powershell
+$env:ADMIN_EMAIL="you@example.com"; $env:ADMIN_PASSWORD="a-long-random-password"
+npm run db:create-admin
+```
+
+This deletes nothing. It creates the admin, or promotes an existing account with that
+email and rotates its password. Re-run it to recover a lost admin password.
 
 ## Vercel deployment checklist (do not auto-deploy from this README)
 

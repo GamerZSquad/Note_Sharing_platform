@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { saveNoteFile } from "../src/lib/storage";
+import { readAdminCredentials } from "./admin-env";
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,16 @@ function pdf(title: string, lines: string[]): Buffer {
 }
 
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "prisma/seed.ts deletes every existing row before inserting demo data and must never run " +
+        "against production. Use `npm run db:create-admin` to bootstrap the first admin instead.",
+    );
+  }
+
+  // Resolved before any deletion so a missing credential aborts without data loss.
+  const adminCredentials = readAdminCredentials();
+
   await prisma.rating.deleteMany();
   await prisma.bookmark.deleteMany();
   await prisma.report.deleteMany();
@@ -38,9 +49,9 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      name: "Asha Rao",
-      email: "admin@studysphere.dev",
-      passwordHash: await hash("Admin123", 12),
+      name: adminCredentials.name,
+      email: adminCredentials.email,
+      passwordHash: await hash(adminCredentials.password, 12),
       role: "ADMIN",
       status: "ACTIVE",
       department: "Computer Science",
@@ -266,8 +277,7 @@ async function main() {
   });
 
   console.log("Seeded StudySphere demo data.");
-  console.log("Student: student@studysphere.dev / Student123");
-  console.log("Admin:   admin@studysphere.dev / Admin123");
+  console.log(`Admin account: ${admin.email} (password taken from ADMIN_PASSWORD, not printed)`);
 }
 
 main()

@@ -1,7 +1,8 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { ALLOWED_UPLOAD_CONTENT_TYPES } from "@/lib/notes-upload";
+import { BlobUploadDenied, blobUploadClientError } from "@/lib/blob-upload-errors";
+import { requireActiveUser } from "@/lib/session";
 import { isBlobStorageEnabled } from "@/lib/storage";
 import { MAX_FILE_SIZE } from "@/lib/constants";
 import { NextResponse } from "next/server";
@@ -13,7 +14,10 @@ import { NextResponse } from "next/server";
  */
 export async function POST(request: Request): Promise<NextResponse> {
   if (!isBlobStorageEnabled()) {
-    return NextResponse.json({ error: "Blob storage is not configured" }, { status: 400 });
+    return NextResponse.json(
+      { error: "File upload is temporarily unavailable" },
+      { status: 400 },
+    );
   }
 
   const body = (await request.json()) as HandleUploadBody;
@@ -23,23 +27,35 @@ export async function POST(request: Request): Promise<NextResponse> {
       body,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const session = await auth();
-        if (!session?.user) throw new Error("Not authenticated");
-        if (session.user.status === "SUSPENDED") throw new Error("Account suspended");
+        const gate = await requireActiveUser("Sign in to upload notes");
+        if (!gate.ok) {
+          const status = gate.response.status;
+          if (status === 401) {
+            throw new BlobUploadDenied(401, "unauthenticated token request");
+          }
+          if (status === 403) {
+            throw new BlobUploadDenied(403, "suspended user token request");
+          }
+          throw new BlobUploadDenied(400, `active-user gate status ${status}`);
+        }
 
         const noteId = clientPayload?.trim();
-        if (!noteId) throw new Error("Missing note id");
+        if (!noteId) {
+          throw new BlobUploadDenied(400, "missing note id in client payload");
+        }
 
         const note = await prisma.note.findFirst({
           where: {
             id: noteId,
-            uploaderId: session.user.id,
+            uploaderId: gate.user.id,
             status: "PENDING",
           },
         });
-        if (!note) throw new Error("Upload reservation not found");
+        if (!note) {
+          throw new BlobUploadDenied(400, "pending reservation not found for caller");
+        }
         if (pathname !== note.fileUrl) {
-          throw new Error("Pathname does not match reserved upload target");
+          throw new BlobUploadDenied(400, "pathname does not match reserved fileUrl");
         }
 
         return {
@@ -49,7 +65,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           allowOverwrite: false,
           tokenPayload: JSON.stringify({
             noteId: note.id,
-            userId: session.user.id,
+            userId: gate.user.id,
           }),
         };
       },
@@ -77,9 +93,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Upload token failed" },
-      { status: 400 },
-    );
+    const mapped = blobUploadClientError(error);
+    console.error(`[blob/upload] ${mapped.log}`);
+    return NextResponse.json(mapped.body, { status: mapped.status });
   }
 }

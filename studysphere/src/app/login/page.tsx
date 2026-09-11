@@ -41,11 +41,11 @@ function LoginForm() {
         <Link href="/forgot-password">Forgot password?</Link>
         <Link href="/register">Create an account</Link>
       </div>
-      <p className="mt-8 rounded-xl bg-leaf p-4 text-sm text-forest-dark">
-        Demo: <code>student@studysphere.dev</code> / <code>Student123</code>
-        <br />
-        Admin: <code>admin@studysphere.dev</code> / <code>Admin123</code>
-      </p>
+      {process.env.NODE_ENV !== "production" && (
+        <p className="mt-8 rounded-xl bg-leaf p-4 text-sm text-forest-dark">
+          Demo: <code>student@studysphere.dev</code> / <code>Student123</code>
+        </p>
+      )}
     </>
   );
 }

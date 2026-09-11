@@ -20,7 +20,14 @@ Implementation status: **code-ready**. Do **not** deploy until Neon + Blob + env
 
 ```bash
 npx prisma migrate deploy
-npx prisma db seed   # optional demo data
+```
+
+Do **not** run `npx prisma db seed` against production: it deletes every row before
+inserting demo data, and it is gated to refuse when `NODE_ENV=production`. Bootstrap the
+first admin with the non-destructive script instead:
+
+```bash
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=... npm run db:create-admin
 ```
 
 - `prisma/dev.db` (old SQLite) is intentionally left in place as a backup. Do not delete it; do not point Prisma at it.
@@ -68,7 +75,8 @@ Optional: `BRAVE_SEARCH_API_KEY`, `UPLOAD_DIR` (local only).
 1. Create a Neon project + database.
 2. Copy the **pooled** connection string → `DATABASE_URL`.
 3. Copy the **direct** connection string → `DIRECT_URL`.
-4. From your machine: `npx prisma migrate deploy` then optionally `npx prisma db seed`.
+4. From your machine: `npx prisma migrate deploy`, then `npm run db:create-admin` with
+   `ADMIN_EMAIL` / `ADMIN_PASSWORD` set for that single run. Do not seed production.
 
 ## What you configure in Vercel
 

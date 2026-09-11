@@ -88,7 +88,12 @@ if ($noteId) {
 $cookieAdmin = Join-Path (Get-Location) "smoke-admin.txt"
 Remove-Item $cookieAdmin -ErrorAction SilentlyContinue
 $csrfAdmin = (curl.exe -s -c $cookieAdmin -b $cookieAdmin "$base/api/auth/csrf" | ConvertFrom-Json).csrfToken
-$loginAdmin = curl.exe -s -o NUL -w "%{http_code}" -c $cookieAdmin -b $cookieAdmin -X POST "$base/api/auth/callback/credentials" -H "Content-Type: application/x-www-form-urlencoded" -d "csrfToken=$csrfAdmin&email=admin@studysphere.dev&password=Admin123&redirect=false&json=true"
+if (-not $env:ADMIN_EMAIL -or -not $env:ADMIN_PASSWORD) {
+  Write-Host "ADMIN_EMAIL and ADMIN_PASSWORD must be set to run the admin checks." -ForegroundColor Red
+  exit 1
+}
+$adminForm = "csrfToken=$csrfAdmin&email=$([uri]::EscapeDataString($env:ADMIN_EMAIL))&password=$([uri]::EscapeDataString($env:ADMIN_PASSWORD))&redirect=false&json=true"
+$loginAdmin = curl.exe -s -o NUL -w "%{http_code}" -c $cookieAdmin -b $cookieAdmin -X POST "$base/api/auth/callback/credentials" -H "Content-Type: application/x-www-form-urlencoded" -d $adminForm
 $results += [PSCustomObject]@{
   Test     = "Auth: admin login"
   Status   = $loginAdmin
