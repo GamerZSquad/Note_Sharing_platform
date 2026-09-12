@@ -1,16 +1,25 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { PasswordInput } from "@/components/password-input";
+import { TurnstileField } from "@/components/turnstile-field";
 import { loginAction } from "./actions";
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const [error, action, pending] = useActionState(loginAction, undefined);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [error, action, pending] = useActionState(
+    async (prev: string | undefined, formData: FormData) => {
+      const result = await loginAction(prev, formData);
+      if (result) setResetSignal((value) => value + 1);
+      return result;
+    },
+    undefined,
+  );
 
   return (
     <>
@@ -29,6 +38,7 @@ function LoginForm() {
           placeholder="Password"
           autoComplete="current-password"
         />
+        <TurnstileField resetSignal={resetSignal} />
         {error && <p className="text-sm text-terracotta">{error}</p>}
         <button
           disabled={pending}
