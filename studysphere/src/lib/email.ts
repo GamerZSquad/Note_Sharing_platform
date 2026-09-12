@@ -1,11 +1,18 @@
+import {
+  buildPasswordResetEmail,
+  buildVerificationEmail,
+} from "@/lib/email-templates";
+
 type Mail = {
   to: string;
   subject: string;
   text: string;
+  html?: string;
 };
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const SEND_TIMEOUT_MS = 10_000;
+const PRODUCTION_APP_ORIGIN = "https://studysphere.space";
 
 /**
  * Email delivery via Resend.
@@ -19,6 +26,35 @@ const SEND_TIMEOUT_MS = 10_000;
  */
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+}
+
+function isLocalOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(origin);
+  }
+}
+
+/**
+ * Absolute app URL for email links.
+ * Prefer AUTH_URL. In production, never emit localhost — fall back to the
+ * canonical StudySphere origin when AUTH_URL is missing or local.
+ */
+export function appUrl(path = ""): string {
+  const configured = process.env.AUTH_URL?.trim().replace(/\/$/, "") || "";
+  const isProduction = process.env.NODE_ENV === "production";
+
+  let base = configured;
+  if (!base) {
+    base = isProduction ? PRODUCTION_APP_ORIGIN : "http://localhost:3000";
+  } else if (isProduction && isLocalOrigin(base)) {
+    base = PRODUCTION_APP_ORIGIN;
+  }
+
+  const normalizedPath = path.startsWith("/") ? path : path ? `/${path}` : "";
+  return `${base}${normalizedPath}`;
 }
 
 /** Resolves to false when the message could not be handed to the provider. */
@@ -35,18 +71,21 @@ export async function sendMail(mail: Mail): Promise<boolean> {
   }
 
   try {
+    const payload: Record<string, unknown> = {
+      from: process.env.EMAIL_FROM,
+      to: [mail.to],
+      subject: mail.subject,
+      text: mail.text,
+    };
+    if (mail.html) payload.html = mail.html;
+
     const response = await fetch(RESEND_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: process.env.EMAIL_FROM,
-        to: [mail.to],
-        subject: mail.subject,
-        text: mail.text,
-      }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     });
 
@@ -64,7 +103,32 @@ export async function sendMail(mail: Mail): Promise<boolean> {
   }
 }
 
-export function appUrl(path = ""): string {
-  const base = process.env.AUTH_URL ?? "http://localhost:3000";
-  return `${base}${path}`;
+export async function sendVerificationEmail(options: {
+  to: string;
+  name: string;
+  verifyUrl: string;
+}): Promise<boolean> {
+  const template = buildVerificationEmail({
+    name: options.name,
+    verifyUrl: options.verifyUrl,
+  });
+  return sendMail({
+    to: options.to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
+}
+
+export async function sendPasswordResetEmail(options: {
+  to: string;
+  resetUrl: string;
+}): Promise<boolean> {
+  const template = buildPasswordResetEmail({ resetUrl: options.resetUrl });
+  return sendMail({
+    to: options.to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
 }

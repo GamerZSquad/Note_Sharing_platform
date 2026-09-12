@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { forgotPasswordSchema } from "@/lib/validations";
-import { sendMail, appUrl } from "@/lib/email";
+import { sendPasswordResetEmail, appUrl } from "@/lib/email";
 import { jsonError, jsonOk } from "@/lib/http";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
@@ -29,10 +29,9 @@ export async function POST(request: Request) {
       },
     });
     resetUrl = appUrl(`/reset-password?token=${token}`);
-    await sendMail({
+    await sendPasswordResetEmail({
       to: user.email,
-      subject: "Reset your StudySphere password",
-      text: `Reset your password using this link (valid for 1 hour):\n${resetUrl}`,
+      resetUrl,
     });
   }
 

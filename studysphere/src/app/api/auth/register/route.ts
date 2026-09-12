@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { registerSchema } from "@/lib/validations";
-import { sendMail, appUrl } from "@/lib/email";
+import { sendVerificationEmail, appUrl } from "@/lib/email";
 import { jsonError, jsonOk } from "@/lib/http";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
@@ -46,10 +46,10 @@ export async function POST(request: Request) {
   });
 
   const verifyUrl = appUrl(`/verify-email?token=${token}`);
-  const delivered = await sendMail({
+  const delivered = await sendVerificationEmail({
     to: user.email,
-    subject: "Verify your StudySphere account",
-    text: `Hi ${user.name},\n\nConfirm your email by opening this link:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+    name: user.name,
+    verifyUrl,
   });
 
   return jsonOk(
