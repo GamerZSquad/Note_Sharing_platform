@@ -3,21 +3,39 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
+import { TurnstileField } from "@/components/turnstile-field";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [resetUrl, setResetUrl] = useState("");
+  const [error, setError] = useState("");
+  const [resetSignal, setResetSignal] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     const form = new FormData(event.currentTarget);
+    const token =
+      turnstileToken || String(form.get("turnstileToken") || "");
     const response = await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: form.get("email") }),
+      body: JSON.stringify({
+        email: form.get("email"),
+        turnstileToken: token,
+      }),
     });
     const data = await response.json();
-    setMessage(data.data?.message ?? data.error ?? "Request sent");
+    if (!response.ok) {
+      setError(data.error ?? "Request failed");
+      setTurnstileToken(null);
+      setResetSignal((value) => value + 1);
+      setMessage("");
+      setResetUrl("");
+      return;
+    }
+    setMessage(data.data?.message ?? "Request sent");
     setResetUrl(data.data?.resetUrl ?? "");
   }
 
@@ -35,6 +53,11 @@ export default function ForgotPasswordPage() {
           placeholder="Email"
           className="w-full rounded-xl border border-line bg-paper px-4 py-3"
         />
+        <TurnstileField
+          resetSignal={resetSignal}
+          onTokenChange={setTurnstileToken}
+        />
+        {error && <p className="text-sm text-terracotta">{error}</p>}
         <button className="w-full rounded-full bg-forest py-3 text-white">Send reset link</button>
       </form>
       {message && <p className="mt-4 text-sm">{message}</p>}

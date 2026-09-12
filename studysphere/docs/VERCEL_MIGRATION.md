@@ -8,7 +8,8 @@ Implementation status: **code-ready**. Do **not** deploy until Neon + Blob + env
 | --- | --- | --- |
 | Database | PostgreSQL via `DATABASE_URL` / `DIRECT_URL` | Neon PostgreSQL |
 | Files | `UPLOAD_DIR` filesystem (`./uploads`) | Private Vercel Blob |
-| Auth | Auth.js Credentials + JWT | Same |
+| Auth | Auth.js Credentials + JWT + Turnstile | Same |
+| Bot protection | Cloudflare Turnstile (Siteverify server-side) | Same |
 | Email | Link returned in response (no send) | Resend (`RESEND_API_KEY` + `EMAIL_FROM`) |
 | Rate limits | In-memory Map | Same (best-effort on serverless) |
 
@@ -69,6 +70,9 @@ Required for production:
 - `EMAIL_FROM` (address on a domain verified in Resend)
 - Also ensure `AUTH_URL` is the real production origin — verification and reset
   emails embed links built from it.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (Cloudflare Turnstile
+  on login / register / forgot / reset; allow hostnames `localhost`,
+  `studysphere.space`, `www.studysphere.space`)
 
 Optional: `BRAVE_SEARCH_API_KEY`, `UPLOAD_DIR` (local only).
 

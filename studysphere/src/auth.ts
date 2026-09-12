@@ -1,8 +1,14 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { loginSchema } from "@/lib/validations";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+
+/** Thrown when Turnstile Siteverify fails — maps to a friendly login message. */
+export class TurnstileSignin extends CredentialsSignin {
+  code = "turnstile";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -15,8 +21,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        turnstileToken: { label: "Turnstile", type: "text" },
       },
       authorize: async (credentials) => {
+        const turnstileOk = await verifyTurnstileToken(credentials?.turnstileToken);
+        if (!turnstileOk) {
+          throw new TurnstileSignin();
+        }
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 

@@ -99,6 +99,26 @@ Without `RESEND_API_KEY` / `EMAIL_FROM` no mail is sent; outside production the
 register and forgot-password responses return the link directly so local
 development still works. Production responses never include those links.
 
+## Cloudflare Turnstile
+
+Auth forms (login, register, forgot password, reset password) use Cloudflare
+Turnstile Managed mode. The browser widget is public (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`);
+every submission is verified server-side with `TURNSTILE_SECRET_KEY` via Siteverify.
+A client-only widget is not enough.
+
+Set in `.env` / Vercel:
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — widget site key
+- `TURNSTILE_SECRET_KEY` — server-only secret (never `NEXT_PUBLIC_`)
+
+In the Cloudflare Turnstile dashboard, allow hostnames:
+
+- `localhost` (local `http://localhost:3000`)
+- `studysphere.space`
+- `www.studysphere.space`
+
+For local development you may use Cloudflare’s [dummy always-pass keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+
 ## Rate limiting (serverless note)
 
 The current limiter is **in-memory per instance**. On Vercel this is not shared across serverless isolates, so limits are best-effort only. Replace with Redis/Upstash later if needed — not changed in this migration.

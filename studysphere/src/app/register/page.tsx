@@ -4,17 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { PasswordInput } from "@/components/password-input";
+import { TurnstileField } from "@/components/turnstile-field";
 import { DEPARTMENTS, SEMESTERS } from "@/lib/constants";
 
 export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [verifyUrl, setVerifyUrl] = useState("");
   const [error, setError] = useState("");
+  const [resetSignal, setResetSignal] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     const form = new FormData(event.currentTarget);
+    const token =
+      turnstileToken || String(form.get("turnstileToken") || "");
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -24,11 +29,14 @@ export default function RegisterPage() {
         password: form.get("password"),
         department: form.get("department") || undefined,
         semester: form.get("semester") || undefined,
+        turnstileToken: token,
       }),
     });
     const data = await response.json();
     if (!response.ok) {
       setError(data.error ?? "Registration failed");
+      setTurnstileToken(null);
+      setResetSignal((value) => value + 1);
       return;
     }
     setMessage(data.data.message);
@@ -66,6 +74,10 @@ export default function RegisterPage() {
             </option>
           ))}
         </select>
+        <TurnstileField
+          resetSignal={resetSignal}
+          onTokenChange={setTurnstileToken}
+        />
         {error && <p className="text-sm text-terracotta">{error}</p>}
         <button className="w-full rounded-full bg-forest py-3 text-white hover:bg-forest-dark">
           Register
