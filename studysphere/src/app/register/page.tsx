@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
+import { PasswordInput } from "@/components/password-input";
 import { DEPARTMENTS, SEMESTERS } from "@/lib/constants";
 
 export default function RegisterPage() {
@@ -44,7 +45,13 @@ export default function RegisterPage() {
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <input name="name" required placeholder="Full name" className="w-full rounded-xl border border-line bg-paper px-4 py-3" />
         <input name="email" type="email" required placeholder="Email" className="w-full rounded-xl border border-line bg-paper px-4 py-3" />
-        <input name="password" type="password" required placeholder="Password (letter + number, 8+ chars)" className="w-full rounded-xl border border-line bg-paper px-4 py-3" />
+        <PasswordInput
+          name="password"
+          required
+          placeholder="Password (letter + number, 8+ chars)"
+          autoComplete="new-password"
+          showStrength
+        />
         <select name="department" className="w-full rounded-xl border border-line bg-paper px-4 py-3">
           <option value="">Department (optional)</option>
           {DEPARTMENTS.map((item) => (

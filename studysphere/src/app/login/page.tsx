@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { PasswordInput } from "@/components/password-input";
 import { loginAction } from "./actions";
 
 function LoginForm() {
@@ -22,12 +23,11 @@ function LoginForm() {
           placeholder="Email"
           className="w-full rounded-xl border border-line bg-paper px-4 py-3"
         />
-        <input
+        <PasswordInput
           name="password"
-          type="password"
           required
           placeholder="Password"
-          className="w-full rounded-xl border border-line bg-paper px-4 py-3"
+          autoComplete="current-password"
         />
         {error && <p className="text-sm text-terracotta">{error}</p>}
         <button

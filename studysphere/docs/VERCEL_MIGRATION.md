@@ -67,6 +67,8 @@ Required for production:
 - `BLOB_READ_WRITE_TOKEN` and/or connected Blob store (`BLOB_STORE_ID`)
 - `RESEND_API_KEY`
 - `EMAIL_FROM` (address on a domain verified in Resend)
+- Also ensure `AUTH_URL` is the real production origin — verification and reset
+  emails embed links built from it.
 
 Optional: `BRAVE_SEARCH_API_KEY`, `UPLOAD_DIR` (local only).
 

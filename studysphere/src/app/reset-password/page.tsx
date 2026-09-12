@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
+import { PasswordInput } from "@/components/password-input";
 
 function ResetForm() {
   const searchParams = useSearchParams();
@@ -27,12 +28,12 @@ function ResetForm() {
   return (
     <>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <input
+        <PasswordInput
           name="password"
-          type="password"
           required
           placeholder="New password"
-          className="w-full rounded-xl border border-line bg-paper px-4 py-3"
+          autoComplete="new-password"
+          showStrength
         />
         {error && <p className="text-sm text-terracotta">{error}</p>}
         {message && <p className="text-sm text-forest">{message}</p>}
