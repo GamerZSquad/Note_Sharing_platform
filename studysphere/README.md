@@ -82,15 +82,22 @@ See [docs/VERCEL_MIGRATION.md](./docs/VERCEL_MIGRATION.md) for details, blockers
 
 ## Email
 
-Delivered through [Resend](https://resend.com). Set `RESEND_API_KEY` and `EMAIL_FROM`
-(with a verified sending domain) to enable:
+Delivered through [Resend](https://resend.com). Set these in Vercel (Production/Preview):
+
+- `RESEND_API_KEY` — Resend API key (server-only; never `NEXT_PUBLIC_`)
+- `EMAIL_FROM` — verified sender, e.g. `StudySphere <no-reply@your-domain.com>`
+- `AUTH_URL` — production origin used to build verification/reset links
+  (e.g. `https://your-app.vercel.app`)
+
+That enables:
 
 - email verification
 - forgot password
 - password reset
 
-Without those variables no mail is sent; outside production the register and
-forgot-password responses return the link directly so local development still works.
+Without `RESEND_API_KEY` / `EMAIL_FROM` no mail is sent; outside production the
+register and forgot-password responses return the link directly so local
+development still works. Production responses never include those links.
 
 ## Rate limiting (serverless note)
 
